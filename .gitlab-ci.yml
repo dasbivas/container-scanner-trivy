@@ -1,0 +1,34 @@
+image: docker:latest
+
+services:
+  - docker:19.03-dind
+
+stages:
+  - build
+  - push
+
+before_script:
+  - echo -n $CI_JOB_TOKEN | docker login -u gitlab-ci-token --password-stdin $CI_REGISTRY
+
+Build:
+  stage: build
+  tags: 
+    - internet
+  script:
+    - >
+      docker build
+      --tag $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA
+      .
+    - docker push $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA
+
+Push tag:
+  variables:
+    GIT_STRATEGY: none
+  stage: push
+  tags: 
+    - internet
+  script:
+    - docker pull $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA
+    - docker tag $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA $CI_REGISTRY_IMAGE:latest
+    - docker push $CI_REGISTRY_IMAGE:latest
+#
